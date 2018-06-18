@@ -32,6 +32,13 @@ def srdfilter(data):
     return data
 
 
+def variant_inheritance(data):
+    for item in data:
+        if item.get('type') == 'GV':
+            item.update(item['inherits'])
+    return data
+
+
 def dump(data):
     with open('out/items.json', 'w') as f:
         json.dump(data, f, indent=4)
@@ -41,6 +48,7 @@ def run():
     data = get_latest_items()
     data = moneyfilter(data)
     data = srdfilter(data)
+    data = variant_inheritance(data)
     dump(data)  # TODO: DMG object parse
 
 
