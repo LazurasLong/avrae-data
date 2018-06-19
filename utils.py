@@ -50,6 +50,7 @@ def nth_repl(s, sub, repl, nth):
 
 ABILITY_MAP = {'str': 'Strength', 'dex': 'Dexterity', 'con': 'Constitution',
                'int': 'Intelligence', 'wis': 'Wisdom', 'cha': 'Charisma'}
+ATTACK_TYPES = {"M": "Melee", "R": "Ranged", "W": "Weapon", "S": "Spell"}
 
 
 def render(text, md_breaks=False):
@@ -102,6 +103,11 @@ def render(text, md_breaks=False):
                 out.append(f"{entry['number']}d{entry['faces']}")
             elif entry['type'] == 'bonusSpeed':
                 out.append(f"{entry['value']} feet")
+            elif entry['type'] == 'actions':
+                out.append((f"**{entry['name']}**: " if 'name' in entry else '') + render(entry['entries']))
+            elif entry['type'] == 'attack':
+                out.append(f"{' '.join(ATTACK_TYPES.get(t) for t in entry['attackType'])} Attack: "
+                           f"{render(entry['attackEntries'])} Hit: {render(entry['hitEntries'])}")
             else:
                 log.warning(f"Missing astranauta entry type parse: {entry}")
 

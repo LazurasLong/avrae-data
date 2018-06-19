@@ -1,7 +1,7 @@
 import json
 import logging
 
-from utils import get_data
+from utils import get_data, render
 
 log = logging.getLogger("items")
 
@@ -13,6 +13,32 @@ def get_latest_items():
 
 def moneyfilter(data):
     return [i for i in data if not i.get('type') == "$"]
+
+
+def variant_inheritance(data):
+    for item in data:
+        if item.get('type') == 'GV':
+            if 'entries' in item:
+                oldentries = item['entries'].copy()
+                item.update(item['inherits'])
+                item['entries'] = oldentries
+            else:
+                item.update(item['inherits'])
+            del item['inherits']  # avrae doesn't parse it anyway
+    return data
+
+
+def get_objects():
+    return get_data("objects.json")['object']
+
+
+def object_actions(objects):
+    for object in objects:
+        if 'actionEntries' in object:
+            object['entries'].append('__Actions__')
+            object['entries'].append(render(object['actionEntries']))
+            del object['actionEntries']  # also unparsed
+    return objects
 
 
 def srdfilter(data):
@@ -32,19 +58,6 @@ def srdfilter(data):
     return data
 
 
-def variant_inheritance(data):
-    for item in data:
-        if item.get('type') == 'GV':
-            if 'entries' in item:
-                oldentries = item['entries'].copy()
-                item.update(item['inherits'])
-                item['entries'] = oldentries
-            else:
-                item.update(item['inherits'])
-            del item['inherits']  # avrae doesn't parse it anyway
-    return data
-
-
 def dump(data):
     with open('out/items.json', 'w') as f:
         json.dump(data, f, indent=4)
@@ -53,8 +66,11 @@ def dump(data):
 def run():
     data = get_latest_items()
     data = moneyfilter(data)
-    data = srdfilter(data)
     data = variant_inheritance(data)
+    objects = get_objects()
+    objects = object_actions(objects)
+    data.extend(objects)
+    data = srdfilter(data)
     dump(data)  # TODO: DMG object parse
 
 
