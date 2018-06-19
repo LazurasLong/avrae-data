@@ -35,7 +35,12 @@ def srdfilter(data):
 def variant_inheritance(data):
     for item in data:
         if item.get('type') == 'GV':
-            item.update(item['inherits'])
+            if 'entries' in item:
+                oldentries = item['entries'].copy()
+                item.update(item['inherits'])
+                item['entries'] = oldentries
+            else:
+                item.update(item['inherits'])
     return data
 
 
