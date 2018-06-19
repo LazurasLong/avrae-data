@@ -41,6 +41,7 @@ def variant_inheritance(data):
                 item['entries'] = oldentries
             else:
                 item.update(item['inherits'])
+            del item['inherits']  # avrae doesn't parse it anyway
     return data
 
 
