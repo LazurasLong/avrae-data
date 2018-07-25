@@ -6,7 +6,8 @@ from utils import get_json
 
 SRD = ['Dragonborn', 'Half-Elf', 'Half-Orc', 'Elf (High)', 'Dwarf (Hill)', 'Human', 'Human (Variant)',
        'Halfling (Lightfoot)', 'Gnome (Rock)', 'Tiefling']
-SOURCE_HIERARCHY = ['MTF', 'VGM', 'PHB', 'DMG', 'UA', 'nil']
+SOURCE_HIERARCHY = ['MTF', 'VGM', 'PHB', 'DMG', 'UAWGtE', 'UA', 'nil']
+EXPLICIT_SOURCES = ['UAEberron', 'DMG']
 
 log = logging.getLogger("races")
 
@@ -52,6 +53,15 @@ def split_subraces(races):
     return out
 
 
+def explicit_sources(data):
+    for r in data:
+        if r['source'] in EXPLICIT_SOURCES:
+            new_name = f"{r['name']} ({r['source']})"
+            log.info(f"Renaming {r['name']} to {new_name} (explicit override)")
+            r['name'] = new_name
+    return data
+
+
 def fix_dupes(data):
     for race in data:
         if len([r for r in data if r['name'] == race['name']]) > 1:
@@ -83,6 +93,7 @@ def dump(data):
 def run():
     data = get_races_from_web()
     data = split_subraces(data)
+    data = explicit_sources(data)
     data = fix_dupes(data)
     data = srdfilter(data)
     dump(data)

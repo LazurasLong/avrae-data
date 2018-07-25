@@ -53,14 +53,14 @@ ABILITY_MAP = {'str': 'Strength', 'dex': 'Dexterity', 'con': 'Constitution',
 ATTACK_TYPES = {"M": "Melee", "R": "Ranged", "W": "Weapon", "S": "Spell"}
 
 
-def render(text, md_breaks=False):
+def render(text, md_breaks=False, join_char='\n'):
     """Parses a list or string from astranauta data.
     :returns str - The final text."""
     if not isinstance(text, list):
         return parse_data_formatting(str(text))
 
     out = []
-    join_str = '\n' if not md_breaks else '  \n'
+    join_str = f'{join_char}' if not md_breaks else f'  {join_char}'
 
     for entry in text:
         if not isinstance(entry, dict):
@@ -118,7 +118,7 @@ def render(text, md_breaks=False):
 
 
 FORMATTING = {'bold': '**', 'italic': '*', 'b': '**', 'i': '*'}
-PARSING = {'creature': lambda e: e.split('|')[-1], 'item': lambda e: e.split('|')[0]}
+PARSING = {'creature': lambda e: e.split('|')[-1], 'item': lambda e: e.split('|')[0], 'hit': lambda e: f"{int(e):+}"}
 
 
 def parse_data_formatting(text):

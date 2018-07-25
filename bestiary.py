@@ -1,9 +1,7 @@
-import json
-
 from utils import *
 
-ATTACK_RE = re.compile(r'(?:<i>)?(?:\w+ ){2,4}Attack:(?:</i>)? ([+-]?\d+) to hit, .*?(?:<i>)?'
-                       r'Hit:(?:</i>)? (?:(?:[+-]?\d+ \((.+?)\))|(?:([+-]?\d+))) (\w+) damage[., ]?'
+ATTACK_RE = re.compile(r'(?:<i>)?(?:\w+ ){1,4}Attack:(?:</i>)? ([+-]?\d+) to hit, .*?(?:<i>)?'
+                       r'Hit:(?:</i>)? (?:(?:[+-]?\d+ \((.+?)\))|(?:([+-]?\d+))) (\w+) damage[., ]??'
                        r'(?:in melee, or [+-]?\d+ \((.+?)\) (\w+) damage at range[,.]?)?'
                        r'(?: or [+-]?\d+ \((.+?)\) (\w+) damage (?:\w+ ?)+[.,]?)?'
                        r'(?: ?plus [+-]?\d+ \((.+?)\) (\w+) damage)?', re.IGNORECASE)
@@ -39,6 +37,20 @@ def srdfilter(data):
             monster['srd'] = True
         else:
             monster['srd'] = False
+    return data
+
+
+def parse_ac(data):
+    for monster in data:
+        log.info(f"Parsing {monster['name']} AC")
+        if isinstance(monster['ac'][0], int):
+            monster['ac'] = {'ac': int(monster['ac'][0])}
+        elif isinstance(monster['ac'][0], dict):
+            monster['ac'] = {'ac': int(monster['ac'][0]['ac']),
+                             'armortype': render(monster['ac'][0].get('from', []), join_char=', ')}
+        else:
+            log.warning(f"Unknown AC type: {monster['ac']}")
+            raise Exception
     return data
 
 
@@ -176,6 +188,7 @@ def dump(data):
 def run():
     data = get_bestiaries_from_web()
     data = srdfilter(data)
+    data = parse_ac(data)
     rendered = monster_render(data)
     out = parse_attacks(rendered)
     dump(out)
