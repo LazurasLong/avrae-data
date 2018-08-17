@@ -71,7 +71,7 @@ def run():
     objects = object_actions(objects)
     data.extend(objects)
     data = srdfilter(data)
-    dump(data)  # TODO: DMG object parse
+    dump(data)
 
 
 if __name__ == '__main__':
