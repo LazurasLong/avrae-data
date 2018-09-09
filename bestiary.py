@@ -190,6 +190,7 @@ def run():
     data = srdfilter(data)
     data = parse_ac(data)
     rendered = monster_render(data)
+    rendered = recursive_tag(rendered)
     out = parse_attacks(rendered)
     dump(out)
 

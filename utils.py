@@ -122,17 +122,22 @@ def SRC_FORMAT(e):
     return e.split('|')[0] if len(e.split('|')) < 3 else e.split('|')[-1]
 
 
+ATK_TYPES = {'mw': "Melee Weapon", 'rw': "Ranged Weapon", 'mw,rw': "Melee or Ranged Weapon",
+             'ms': "Melee Spell", 'rs': "Ranged Spell", 'ms,rs': "Melee or Ranged Spell"}
 FORMATTING = {'bold': '**', 'italic': '*', 'b': '**', 'i': '*'}
 PARSING = {'hit': lambda e: f"{int(e):+}",
            'filter': lambda e: e.split('|')[0],
            'link': lambda e: f"[{e.split('|')[0]}]({e.split('|')[1]})",
-           'adventure': lambda e: e.split('|')[0]}
-IGNORED = ['dice', 'condition', 'skill', 'action', 'creature', 'item', 'spell']
+           'adventure': lambda e: e.split('|')[0],
+           'recharge': lambda e: f"(Recharge {e}-6)" if e else "(Recharge 6)",
+           'chance': lambda e: e.split('|')[1],
+           'atk': lambda e: f"{ATK_TYPES.get(e, 'Unknown')} Attack:"}
+IGNORED = ['dice', 'condition', 'skill', 'action', 'creature', 'item', 'spell', 'damage']
 
 
 def parse_data_formatting(text):
     """Parses a {@format } string."""
-    exp = re.compile(r'{@(\w+) ([^{}]+?)}')
+    exp = re.compile(r'{@(\w+)(?: ([^{}]+?))?}')
 
     def sub(match):
         log.debug(f"Rendering {match.group(0)}...")
