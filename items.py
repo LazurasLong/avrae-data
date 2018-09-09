@@ -1,7 +1,7 @@
 import json
 import logging
 
-from utils import get_data, render
+from utils import get_data, render, recursive_tag
 
 log = logging.getLogger("items")
 
@@ -58,6 +58,13 @@ def srdfilter(data):
     return data
 
 
+def prerender(data):
+    for item in data:
+        for k, v in item.items():
+            item[k] = recursive_tag(v)
+    return data
+
+
 def dump(data):
     with open('out/items.json', 'w') as f:
         json.dump(data, f, indent=4)
@@ -71,6 +78,7 @@ def run():
     objects = object_actions(objects)
     data.extend(objects)
     data = srdfilter(data)
+    data = prerender(data)
     dump(data)
 
 

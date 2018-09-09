@@ -6,12 +6,13 @@ import sys
 import requests
 
 DATA_SRC = "https://5etools.com/data/"
+LOGLEVEL = logging.INFO if not "debug" in sys.argv else logging.DEBUG
 
 log_formatter = logging.Formatter('%(levelname)s:%(name)s: %(message)s')
 handler = logging.StreamHandler(sys.stdout)
 handler.setFormatter(log_formatter)
 logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger.setLevel(LOGLEVEL)
 logger.addHandler(handler)
 log = logging.getLogger(__name__)
 
@@ -70,9 +71,9 @@ def render(text, md_breaks=False, join_char='\n'):
                 out.append(f"**{entry['title']}**: {render(entry['text'])}")
             elif not 'type' in entry and 'istable' in entry:  # only for races
                 temp = f"**{entry['caption']}**\n" if 'caption' in entry else ''
-                temp += ' - '.join(f"**{cl}**" for cl in entry['thead']) + '\n'
+                temp += ' - '.join(f"**{parse_data_formatting(cl)}**" for cl in entry['thead']) + '\n'
                 for row in entry['tbody']:
-                    temp += ' - '.join(f"{col}" for col in row) + '\n'
+                    temp += ' - '.join(f"{parse_data_formatting(col)}" for col in row) + '\n'
                 out.append(temp.strip())
             elif entry['type'] == 'entries':
                 out.append((f"**{entry['name']}**: " if 'name' in entry else '') + render(
@@ -83,9 +84,9 @@ def render(text, md_breaks=False, join_char='\n'):
                 out.append('\n'.join(f"- {t}" for t in entry['items']))
             elif entry['type'] == 'table':
                 temp = f"**{entry['caption']}**\n" if 'caption' in entry else ''
-                temp += ' - '.join(f"**{cl}**" for cl in entry['colLabels']) + '\n'
+                temp += ' - '.join(f"**{parse_data_formatting(cl)}**" for cl in entry['colLabels']) + '\n'
                 for row in entry['rows']:
-                    temp += ' - '.join(f"{col}" for col in row) + '\n'
+                    temp += ' - '.join(f"{parse_data_formatting(col)}" for col in row) + '\n'
                 out.append(temp.strip())
             elif entry['type'] == 'invocation':
                 pass  # this is only found in options
@@ -117,24 +118,53 @@ def render(text, md_breaks=False, join_char='\n'):
     return parse_data_formatting(join_str.join(out))
 
 
+def SRC_FORMAT(e):
+    return e.split('|')[0] if len(e.split('|')) < 3 else e.split('|')[-1]
+
+
 FORMATTING = {'bold': '**', 'italic': '*', 'b': '**', 'i': '*'}
-PARSING = {'creature': lambda e: e.split('|')[-1], 'item': lambda e: e.split('|')[0], 'hit': lambda e: f"{int(e):+}"}
+PARSING = {'hit': lambda e: f"{int(e):+}",
+           'filter': lambda e: e.split('|')[0],
+           'link': lambda e: f"[{e.split('|')[0]}]({e.split('|')[1]})",
+           'adventure': lambda e: e.split('|')[0]}
+IGNORED = ['dice', 'condition', 'skill', 'action', 'creature', 'item', 'spell']
 
 
 def parse_data_formatting(text):
     """Parses a {@format } string."""
-    exp = re.compile(r'{@(\w+) (.+?)}')
+    exp = re.compile(r'{@(\w+) ([^{}]+?)}')
 
     def sub(match):
-        if match.group(1) in PARSING:
+        log.debug(f"Rendering {match.group(0)}...")
+        if match.group(1) in IGNORED:
+            out = SRC_FORMAT(match.group(2))
+        elif match.group(1) in PARSING:
             f = PARSING.get(match.group(1), lambda e: e)
-            return f(match.group(2))
+            out = f(match.group(2))
         else:
             f = FORMATTING.get(match.group(1), '')
             if not match.group(1) in FORMATTING:
-                log.warning(f"Unknown tag: {match.group(1)}")
-            return f"{f}{match.group(2)}{f}"
+                log.warning(f"Unknown tag: {match.group(0)}")
+            out = f"{f}{match.group(2)}{f}"
+        log.debug(f"Replaced with {out}")
+        return out
 
     while exp.search(text):
         text = exp.sub(sub, text)
     return text
+
+
+def recursive_tag(value):
+    """
+    Recursively renders all tags.
+    :param value: The object to render tags from.
+    :return: The object, with all tags rendered.
+    """
+    if isinstance(value, str):
+        return render(value)
+    if isinstance(value, list):
+        return [recursive_tag(i) for i in value]
+    if isinstance(value, dict):
+        for k, v in value.items():
+            value[k] = recursive_tag(v)
+    return value
