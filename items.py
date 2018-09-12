@@ -60,6 +60,12 @@ def srdfilter(data):
 
 def prerender(data):
     for item in data:
+        if 'entries' in item:
+            item['desc'] = render(item['entries'])
+            del item['entries']
+        else:
+            item['desc'] = ""
+
         for k, v in item.items():
             item[k] = recursive_tag(v)
     return data

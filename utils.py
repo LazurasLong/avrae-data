@@ -57,6 +57,8 @@ ATTACK_TYPES = {"M": "Melee", "R": "Ranged", "W": "Weapon", "S": "Spell"}
 def render(text, md_breaks=False, join_char='\n'):
     """Parses a list or string from astranauta data.
     :returns str - The final text."""
+    if isinstance(text, dict):
+        text = [text]
     if not isinstance(text, list):
         return parse_data_formatting(str(text))
 
@@ -81,12 +83,12 @@ def render(text, md_breaks=False, join_char='\n'):
             elif entry['type'] == 'options':
                 pass  # parsed separately in classfeat
             elif entry['type'] == 'list':
-                out.append('\n'.join(f"- {render([t])}" for t in entry['items']))
+                out.append('\n'.join(f"- {render(t)}" for t in entry['items']))
             elif entry['type'] == 'table':
                 temp = f"**{entry['caption']}**\n" if 'caption' in entry else ''
                 temp += ' - '.join(f"**{parse_data_formatting(cl)}**" for cl in entry['colLabels']) + '\n'
                 for row in entry['rows']:
-                    temp += ' - '.join(f"{parse_data_formatting(col)}" for col in row) + '\n'
+                    temp += ' - '.join(f"{render(col)}" for col in row) + '\n'
                 out.append(temp.strip())
             elif entry['type'] == 'invocation':
                 pass  # this is only found in options
@@ -111,6 +113,8 @@ def render(text, md_breaks=False, join_char='\n'):
                            f"{render(entry['attackEntries'])} Hit: {render(entry['hitEntries'])}")
             elif entry['type'] == 'item':
                 out.append(f"*{entry['name']}* {render(entry['entry'])}")
+            elif entry['type'] == 'cell':
+                out.append(render(entry['entry']))
             else:
                 log.warning(f"Missing astranauta entry type parse: {entry}")
 
