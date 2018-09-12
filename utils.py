@@ -81,7 +81,7 @@ def render(text, md_breaks=False, join_char='\n'):
             elif entry['type'] == 'options':
                 pass  # parsed separately in classfeat
             elif entry['type'] == 'list':
-                out.append('\n'.join(f"- {t}" for t in entry['items']))
+                out.append('\n'.join(f"- {render([t])}" for t in entry['items']))
             elif entry['type'] == 'table':
                 temp = f"**{entry['caption']}**\n" if 'caption' in entry else ''
                 temp += ' - '.join(f"**{parse_data_formatting(cl)}**" for cl in entry['colLabels']) + '\n'
@@ -109,6 +109,8 @@ def render(text, md_breaks=False, join_char='\n'):
             elif entry['type'] == 'attack':
                 out.append(f"{' '.join(ATTACK_TYPES.get(t) for t in entry['attackType'])} Attack: "
                            f"{render(entry['attackEntries'])} Hit: {render(entry['hitEntries'])}")
+            elif entry['type'] == 'item':
+                out.append(f"*{entry['name']}* {render(entry['entry'])}")
             else:
                 log.warning(f"Missing astranauta entry type parse: {entry}")
 
